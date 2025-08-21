@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Know More – Books</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --lavender:#E6E6FA;
+      --purple:#6A0DAD;
+      --purple-dark:#520a91;
+      --text:#222;
+      --dark-bg:#121212;
+      --dark-text:#E0E0E0;
+      --card-bg:#ffffff;
+      --card-bg-dark:#1e1e1e;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:'Poppins',sans-serif;
+      background:var(--purple-dark);
+      color:var(--text);
+      transition:background .35s,color .35s;
+    }
+    body.dark{
+      background:var(--dark-bg);
+      color:var(--dark-text);
+    }
+
+    .wrapper{
+      max-width:1100px;
+      margin:80px auto 60px;
+      padding:0 18px;
+    }
+
+    /* Page header / controls */
+    .topbar{
+      position:fixed;
+      top:12px;
+      left:50%;
+      transform:translateX(-50%);
+      width:min(1100px,100% - 24px);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      z-index:1000;
+      padding:8px 12px;
+      border-radius:10px;
+      background:rgba(255,255,255,.6);
+      backdrop-filter:blur(10px);
+      box-shadow:0 8px 24px rgba(0,0,0,.08);
+    }
+    body.dark .topbar{
+      background:rgba(18,18,18,.6);
+      box-shadow:0 8px 24px rgba(0,0,0,.25);
+    }
+    .title{
+      font-weight:800;
+      letter-spacing:.2px;
+      color:var(--purple);
+    }
+    body.dark .title{color:#c9a3ff}
+
+    .controls{display:flex;gap:10px;align-items:center}
+    .btn, .chip{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:10px 14px;border-radius:10px;border:none;cursor:pointer;
+      text-decoration:none;font-weight:600;transition:transform .15s, background .25s, color .25s, box-shadow .25s;
+    }
+    .btn.primary{background:var(--purple);color:#fff}
+    .btn.primary:hover{background:var(--purple-dark);transform:translateY(-1px)}
+    .btn.ghost{background:transparent;border:1.5px solid var(--purple);color:var(--purple)}
+    .btn.ghost:hover{background:rgba(106,13,173,.08)}
+    .chip{background:#f2e9ff;color:var(--purple)}
+    body.dark .chip{background:#2b2040;color:#e8d7ff}
+
+    /* Grid */
+    .books-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:26px;
+      margin-top:18px;
+    }
+    @media (max-width:900px){
+      .books-grid{grid-template-columns:1fr}
+    }
+
+    /* Card */
+    .book-card{
+      background:var(--card-bg);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 14px 40px rgba(0,0,0,.08);
+      transform:translateY(24px) scale(.96);
+      opacity:0;
+      animation:popUp .75s cubic-bezier(.2,.6,.2,1) forwards;
+      animation-delay:var(--delay,0s);
+      display:grid;
+      grid-template-columns:180px 1fr;
+      min-height:220px;
+    }
+    body.dark .book-card{background:var(--card-bg-dark);box-shadow:0 14px 40px rgba(0,0,0,.35)}
+    @media (max-width:600px){
+      .book-card{grid-template-columns:1fr}
+    }
+
+    .cover{
+      background:#f7f2ff;
+      display:flex;align-items:center;justify-content:center;
+      padding:14px;
+    }
+    body.dark .cover{background:#231b33}
+    .cover img{
+      width:100%;max-width:260px;height:auto;border-radius:10px;display:block
+    }
+
+    .content{
+      padding:18px 18px 16px;
+      display:flex;flex-direction:column;gap:10px;justify-content:center;
+    }
+    .book-title{font-size:1.25rem;font-weight:800;color:var(--purple)}
+    body.dark .book-title{color:#d9c2ff}
+    .price{font-weight:700;color:var(--purple);margin-top:-4px}
+    body.dark .price{color:#e8d7ff}
+
+    .book-desc{
+      line-height:1.65;
+      opacity:0;transform:translateY(22px);
+      transition:opacity .8s, transform .8s;
+    }
+    .book-desc.show{opacity:1;transform:translateY(0)}
+
+    .actions{margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+    .order-btn, .cart-btn{
+      padding:10px 14px;border-radius:10px;border:none;cursor:pointer;
+      color:#fff;background:var(--purple);font-weight:700;
+      transition:background .25s, transform .15s;
+    }
+    .order-btn:hover,.cart-btn:hover{background:var(--purple-dark);transform:translateY(-1px)}
+
+    /* Remove button (book card) */
+    .remove-btn{
+      padding:10px 14px;border-radius:10px;border:1.5px solid var(--purple);cursor:pointer;
+      background:transparent;color:var(--purple);font-weight:700;
+      transition:background .25s, color .25s, transform .15s;
+    }
+    .remove-btn:hover{background:rgba(106,13,173,.08);transform:translateY(-1px)}
+
+    @keyframes popUp{
+      0%{opacity:0;transform:translateY(28px) scale(.9)}
+      70%{opacity:1;transform:translateY(-3px) scale(1.02)}
+      100%{opacity:1;transform:translateY(0) scale(1)}
+    }
+
+    /* Modal */
+    .modal{
+      position:fixed;inset:0;display:none;place-items:center;z-index:1200;
+      background:rgba(0,0,0,.55);
+    }
+    .modal.open{display:grid}
+    .modal-card{
+      width:min(560px,92vw);
+      background:var(--card-bg);
+      border-radius:14px;
+      padding:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,.25);
+      transform:translateY(12px);
+      animation:modalIn .25s ease forwards;
+    }
+    body.dark .modal-card{background:var(--card-bg-dark)}
+    @keyframes modalIn{
+      from{opacity:0;transform:translateY(16px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    .modal-head{
+      display:flex;align-items:center;justify-content:space-between;margin-bottom:12px
+    }
+    .modal-title{font-weight:800;color:var(--purple)}
+    body.dark .modal-title{color:#d9c2ff}
+    .close-x{
+      background:transparent;border:none;font-size:22px;cursor:pointer;color:inherit
+    }
+    .pay-grid{
+      display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px
+    }
+    @media (max-width:520px){.pay-grid{grid-template-columns:1fr}}
+    .pay-card{
+      border:1.5px dashed #cdb8ff;border-radius:12px;padding:16px;text-align:center
+    }
+    body.dark .pay-card{border-color:#5b3b9e}
+    .pay-card h4{margin-bottom:8px}
+    .pay-btn{
+      display:inline-block;padding:12px 16px;border-radius:10px;
+      background:var(--purple);color:#fff;text-decoration:none;font-weight:700
+    }
+    .pay-btn:hover{background:var(--purple-dark)}
+    .note{font-size:.9rem;opacity:.8;margin-top:10px}
+
+    /* Cart list + total (reusing styles) */
+    .cart-items{max-height:200px;overflow:auto;margin:8px 0}
+    .cart-item{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #ddd}
+    body.dark .cart-item{border-color:#333}
+    .cart-total{font-weight:700;margin-top:6px;text-align:right}
+
+    /* Floating cart button (emoji) */
+    .cart-fab{
+      position:fixed;right:14px;bottom:14px;z-index:1300;
+      width:56px;height:56px;border-radius:50%;
+      border:none;cursor:pointer;font-size:24px;line-height:1;
+      background:var(--purple);color:#fff;box-shadow:0 10px 28px rgba(0,0,0,.22);
+      display:flex;align-items:center;justify-content:center;
+      transition:transform .15s, background .25s;
+    }
+    .cart-fab:hover{background:var(--purple-dark);transform:translateY(-2px)}
+    .badge{
+      position:absolute;top:-6px;right:-6px;
+      min-width:22px;height:22px;border-radius:11px;
+      background:#ff4d4f;color:#fff;font-size:12px;font-weight:800;
+      display:flex;align-items:center;justify-content:center;padding:0 6px;
+      box-shadow:0 4px 10px rgba(0,0,0,.25);
+    }
+  </style>
+</head>
+<body>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="title">Our Books</div>
+    <div class="controls">
+      <a class="chip" href="index.html">⬅ Back to Home</a>
+      <button class="btn primary" id="darkToggle">🌙 </button>
+    </div>
+  </div>
+
+  <main class="wrapper">
+    <div class="books-grid">
+      <!-- Book 1 -->
+      <article class="book-card" style="--delay:.05s">
+        <div class="cover">
+          <img src="images/book4.jpg" alt="Book 1 Cover: Inspirational African Heroes and Sheroes" loading="lazy">
+        </div>
+        <div class="content">
+          <h3 class="book-title">Inspirational African Heroes and Sheroes</h3>
+          <p class="price">¢45</p>
+          <p class="book-desc">
+            A powerful collection of real stories and practical frameworks that empower women to lead,
+            influence, and thrive in every season of life.
+          </p>
+          <div class="actions">
+            <button
+              class="order-btn"
+              data-title="Inspirational African Heroes and Sheroes"
+              data-paystack="https://paystack.com/pay/YOUR-RISING-QUEENS"
+            >Order Now</button>
+            <button
+              class="cart-btn"
+              data-title="Inspirational African Heroes and Sheroes"
+              data-price="45"
+            >Add to Cart</button>
+            <button
+              class="remove-btn"
+              data-title="Inspirational African Heroes and Sheroes"
+              data-price="45"
+            >Remove from Cart</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Book 2 -->
+      <article class="book-card" style="--delay:.25s">
+        <div class="cover">
+          <img src="images/book2.jpg" alt="Book 2 Cover: Inspiring African Heroes and Sheroes" loading="lazy">
+        </div>
+        <div class="content">
+          <h3 class="book-title">Inspiring African Heroes and Sheroes</h3>
+          <p class="price">¢35</p>
+          <p class="book-desc">
+            A guided journey through identity, purpose, and impact — with reflective prompts and
+            actionable steps wrapped in grace.
+          </p>
+          <div class="actions">
+            <button
+              class="order-btn"
+              data-title="Inspiring African Heroes and Sheroes"
+              data-paystack="https://paystack.com/pay/YOUR-PURPLE-PATHS"
+            >Order Now</button>
+            <button
+              class="cart-btn"
+              data-title="Inspiring African Heroes and Sheroes"
+              data-price="35"
+            >Add to Cart</button>
+            <button
+              class="remove-btn"
+              data-title="Inspiring African Heroes and Sheroes"
+              data-price="35"
+            >Remove from Cart</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Book 3 -->
+      <article class="book-card" style="--delay:.45s">
+        <div class="cover">
+          <img src="images/book3.jpg" alt="Book 3 Cover: Back to School Adventure" loading="lazy">
+        </div>
+        <div class="content">
+          <h3 class="book-title">Back to School Adventure</h3>
+          <p class="price">¢30</p>
+          <p class="book-desc">
+            Strategies, tools, and mindsets to help you build courageous habits, grow in confidence,
+            and lead with clarity.
+          </p>
+          <div class="actions">
+            <button
+              class="order-btn"
+              data-title="Back to School Adventure"
+              data-paystack="https://paystack.com/pay/YOUR-SHEROES-PLAYBOOK"
+            >Order Now</button>
+            <button
+              class="cart-btn"
+              data-title="Back to School Adventure"
+              data-price="30"
+            >Add to Cart</button>
+            <button
+              class="remove-btn"
+              data-title="Back to School Adventure"
+              data-price="30"
+            >Remove from Cart</button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <!-- Order Modal (unchanged) -->
+  <div class="modal" id="orderModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h3 id="modalTitle" class="modal-title">Order</h3>
+        <button class="close-x" id="closeModal" aria-label="Close">✕</button>
+      </div>
+
+      <div class="pay-grid">
+        <div class="pay-card">
+          <h4>Pay with Paystack</h4>
+          <a id="paystackBtn" class="pay-btn" href="#" target="_blank" rel="noopener">Proceed to Paystack</a>
+          <p class="note">Secure online card & transfer payments.</p>
+        </div>
+        <div class="pay-card">
+          <h4>Pay with MTN MoMo</h4>
+          <a id="momoBtn" class="pay-btn" href="tel:*170#" rel="noopener">Dial *170#</a>
+          <p class="note">On mobile, this opens the MTN MoMo menu. You can customize to your shortcode/workflow.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal (shows cart items + total + payments) -->
+  <div class="modal" id="cartModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cartModalTitle">
+      <div class="modal-head">
+        <h3 id="cartModalTitle" class="modal-title">Your Cart</h3>
+        <button class="close-x" id="closeCartModal" aria-label="Close">✕</button>
+      </div>
+
+      <div id="cartList" class="cart-items"></div>
+      <div class="cart-total" id="cartTotalPopup">Total: ¢0</div>
+
+      <div class="pay-grid" style="margin-top:12px">
+        <div class="pay-card">
+          <h4>Pay with Paystack</h4>
+          <a id="cartPaystackBtn" class="pay-btn" href="https://paystack.com/pay/YOUR-CART-CHECKOUT" target="_blank" rel="noopener">Proceed to Paystack</a>
+          <p class="note">You’ll complete payment for the total above.</p>
+        </div>
+        <div class="pay-card">
+          <h4>Pay with MTN MoMo</h4>
+          <a class="pay-btn" href="tel:*170#" rel="noopener">MOMO ACCOUNT: </a>
+          <p class="note">Use your MoMo menu to send the total amount.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Cart Button (emoji) -->
+  <button class="cart-fab" id="cartFab" aria-label="Open Cart">🛒
+    <span class="badge" id="cartCount">0</span>
+  </button>
+
+  <script>
+    // ==== Dark mode sync with homepage ====
+    const darkToggle = document.getElementById('darkToggle');
+    function applyDarkFromStorage(){
+      const isDark = localStorage.getItem('darkMode') === 'true';
+      document.body.classList.toggle('dark', isDark);
+      darkToggle.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+    }
+    applyDarkFromStorage();
+    darkToggle.addEventListener('click', ()=>{
+      const next = !(localStorage.getItem('darkMode') === 'true');
+      localStorage.setItem('darkMode', next);
+      applyDarkFromStorage();
+    });
+
+    // ==== Scroll reveal for descriptions ====
+    const descs = document.querySelectorAll('.book-desc');
+    const io = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){
+          e.target.classList.add('show');
+          io.unobserve(e.target);
+        }
+      });
+    }, {threshold: .2});
+    descs.forEach(d=>io.observe(d));
+
+    // ==== Order Modal logic (unchanged) ====
+    const modal = document.getElementById('orderModal');
+    const closeModalBtn = document.getElementById('closeModal');
+    const paystackBtn = document.getElementById('paystackBtn');
+
+    function openModal(title, paystackLink){
+      document.getElementById('modalTitle').textContent = `Order: ${title}`;
+      paystackBtn.href = paystackLink || '#';
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(){
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+      document.body.style.overflow = '';
+    }
+
+    document.querySelectorAll('.order-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        openModal(btn.dataset.title, btn.dataset.paystack);
+      });
+    });
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+    window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
+
+    // ==== Cart Logic (with cedi) ====
+    const CEDI = '¢';
+    let cart = []; // array of {title, price}
+
+    const cartCountEl = document.getElementById('cartCount');
+    const cartFab = document.getElementById('cartFab');
+    const cartModal = document.getElementById('cartModal');
+    const closeCartModalBtn = document.getElementById('closeCartModal');
+    const cartListEl = document.getElementById('cartList');
+    const cartTotalPopupEl = document.getElementById('cartTotalPopup');
+
+    function formatCedi(n){ return `${CEDI}${n}`; }
+
+    function renderCart(){
+      // update count badge
+      cartCountEl.textContent = cart.length;
+
+      // build list in cart modal
+      cartListEl.innerHTML = '';
+      let total = 0;
+      cart.forEach((item, idx)=>{
+        total += item.price;
+        const row = document.createElement('div');
+        row.className = 'cart-item';
+        row.innerHTML = `
+          <span>${item.title}</span>
+          <span>${formatCedi(item.price)}</span>
+        `;
+        cartListEl.appendChild(row);
+      });
+      cartTotalPopupEl.textContent = `Total: ${formatCedi(total)}`;
+    }
+
+    function addToCart(title, price){
+      cart.push({title, price});
+      renderCart();
+    }
+
+    function removeFromCart(title){
+      const index = cart.findIndex(i => i.title === title);
+      if(index !== -1){
+        cart.splice(index, 1); // remove a single instance
+        renderCart();
+      }
+    }
+
+    document.querySelectorAll('.cart-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const title = btn.dataset.title;
+        const price = parseFloat(btn.dataset.price);
+        addToCart(title, price);
+      });
+    });
+
+    document.querySelectorAll('.remove-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const title = btn.dataset.title;
+        removeFromCart(title);
+      });
+    });
+
+    // Cart modal open/close
+    function openCart(){
+      renderCart();
+      cartModal.classList.add('open');
+      cartModal.setAttribute('aria-hidden','false');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeCart(){
+      cartModal.classList.remove('open');
+      cartModal.setAttribute('aria-hidden','true');
+      document.body.style.overflow = '';
+    }
+
+    cartFab.addEventListener('click', openCart);
+    closeCartModalBtn.addEventListener('click', closeCart);
+    cartModal.addEventListener('click', (e)=>{ if(e.target === cartModal) closeCart(); });
+    window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && cartModal.classList.contains('open')) closeCart(); });
+
+    // initial paint
+    renderCart();
+  </script>
+</body>
+</html>
